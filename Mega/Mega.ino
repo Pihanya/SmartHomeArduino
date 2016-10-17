@@ -251,8 +251,9 @@ vector<int> handleArguments(vector<int> data) {
 }
 
 void handleSerial() {
-  if (IS_SERIAL_BLOCKED)
+  if (IS_SERIAL_BLOCKED) {
     return;
+  }
 
   if (Serial.available() > 0) {
     vector<int> data = split(Serial.readStringUntil('|').c_str(), ' ');
@@ -301,7 +302,7 @@ void handleSerial() {
 
 /**===================== MODES =====================**/
 void handleModes() {
-  for (vector << int >::iterator it = ROOMS_MODES.begin(); it != ROOMS_MODES.end(); ++it) {
+  for (vector<int>::iterator it = ROOMS_MODES.begin(); it != ROOMS_MODES.end(); ++it) {
 
   }
 }

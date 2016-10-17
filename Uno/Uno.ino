@@ -75,7 +75,7 @@ vector<int> split(const string &s, char delim) {
 
 bool isAllownCard(byte *buffer, byte bufferSize) {
   for (byte i = 0; i < ALLOWN_KEYS; i++) {
-    if (byteArrayEquals(buffer, bufferSize, allownKeys[i], UID_SIZE)) {
+    if (byteArrayEquals(buffer, bufferSize, allownKeys[i], UID_SIZE)) {   
       return true;
     }
   }

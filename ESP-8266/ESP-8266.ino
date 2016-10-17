@@ -3,8 +3,8 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 
-const char* ssid = "........";
-const char* password = "........";
+const char* ssid = "RUTIWF";
+const char* password = "0914196409141";
 const char* accessPassword = "........";
 
 ESP8266WebServer server(80);
@@ -20,7 +20,7 @@ String handleSerial() {
     ++iterations;
   }
 
-  String response = Serial.readStringUntil('|');
+  String response = Serial.readStringUntil('\n');
 
   if (Serial.available() > 0) {
     Serial.read();
@@ -77,7 +77,7 @@ void setup(void) {
     Serial.print(server.arg("name"));
     Serial.print(' ');
     Serial.print(server.arg("value"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -85,7 +85,7 @@ void setup(void) {
   server.on("/get", []() {
     Serial.print("2 ");
     Serial.print(server.arg("pin"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -95,7 +95,7 @@ void setup(void) {
     Serial.print(server.arg("name"));
     Serial.print(' ');
     Serial.print(server.arg("value"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -103,7 +103,7 @@ void setup(void) {
   server.on("/getFeature", []() {
     Serial.print("4 ");
     Serial.print(server.arg("name"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -113,7 +113,7 @@ void setup(void) {
     Serial.print(server.arg("room"));
     Serial.print(' ');
     Serial.print(server.arg("value"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -121,7 +121,7 @@ void setup(void) {
   server.on("/getLightning", []() {
     Serial.print("4 ");
     Serial.print(server.arg("name"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -131,7 +131,7 @@ void setup(void) {
     Serial.print(server.arg("room"));
     Serial.print(' ');
     Serial.print(server.arg("color"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -139,7 +139,7 @@ void setup(void) {
   server.on("/getColor", []() {
     Serial.print("8 ");
     Serial.print(server.arg("room"));
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -149,14 +149,14 @@ void setup(void) {
     Serial.print(server.arg("room"));
     Serial.print(' ');
     Serial.print(server.arg("mode"));
-    Serial.print('|');
+    Serial.print('\n');
 
     if (server.hasArg("duration")) {
       Serial.print(' ');
       Serial.print(server.arg("duration"));
     }
 
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -170,7 +170,7 @@ void setup(void) {
       Serial.print(server.arg("duration"));
     }
 
-    Serial.print('|');
+    Serial.print('\n');
 
     server.send(200, "text/plain", handleSerial());
   });
@@ -184,4 +184,5 @@ void setup(void) {
 void loop(void) {
   server.handleClient();
 }
+
 
