@@ -14,13 +14,14 @@
 using namespace std;
 
 /** UTILITIES **/
+#define ROOMS_AMOUNT 9
 #define COLOR_RED_MASK 0xFF
 #define COLOR_GREEN_MASK 0xFF00
 #define COLOR_BLUE_MASK 0xFF0000
 
-#define COLOR_RED_SHIFT 16
+#define COLOR_RED_SHIFT 0
 #define COLOR_GREEN_SHIFT 8
-#define COLOR_BLUE_SHIFT 0
+#define COLOR_BLUE_SHIFT 16
 
 /** THREADS **/
 Thread serialThread = Thread();
@@ -33,16 +34,13 @@ bool IS_SERIAL_BLOCKED = false;
 #define THREAD_LIGHTNING_INTERVAL 10
 
 /** LIGHTNING **/
-#define ROOMS_RED_PIN 23
-#define ROOMS_BRIGHTNESS_PIN 2
-
-vector<bool> ROOMS_LIGHTNING_ENABLED(8, 1);
-vector<vector<int>> ROOMS_LIGHTNING_COLORS (8, vector<int>(3, 255));
-vector<vector<int>> ROOMS_LIGHTNING_PINS(8, vector<int>(3, 0));
+vector<bool> ROOMS_LIGHTNING_ENABLED(ROOMS_AMOUNT, false);
+vector<vector<int>> ROOMS_LIGHTNING_COLORS (ROOMS_AMOUNT, vector<int>(3, 255));
+vector<vector<int>> ROOMS_LIGHTNING_PINS(ROOMS_AMOUNT, vector<int>(3, 0));
 
 /** MODES **/
-vector<int> ROOMS_MODES(8, 0);
-vector<long> ROOMS_MODES_ENDINGS(8, 0xffffffff);
+vector<int> ROOMS_MODES(ROOMS_AMOUNT, 0);
+vector<long> ROOMS_MODES_ENDINGS(ROOMS_AMOUNT, 0xffffffff);
 
 bool IS_GUARD_MODE_ON = false;
 bool IS_EMERGENCY_MODE_ON = false;
@@ -79,7 +77,7 @@ vector<int> decodeColor(int color) {
 }
 
 int encodeColor(vector<int> data) {
-  return (data[0] << COLOR_RED_SHIFT) + (data[1] << COLOR_GREEN_SHIFT) + (data[2] << COLOR_BLUE_SHIFT);
+  return ((data[2] << COLOR_BLUE_SHIFT) & COLOR_BLUE_MASK) + ((data[1] << COLOR_GREEN_SHIFT) & COLOR_GREEN_MASK) + ((data[0] << COLOR_RED_SHIFT) & COLOR_RED_MASK);
 }
 
 /**===================== ARDUINO COMMUNICATION PROCOTOL =====================**/
@@ -102,7 +100,7 @@ vector<int> feature(vector<int> data) {
     if (it != data.end() - 1) {
       Serial1.print(' ');
     } else {
-      Serial1.print('|');
+      Serial1.print('\n');
     }
   }
 }
@@ -110,15 +108,15 @@ vector<int> feature(vector<int> data) {
 /** [4] int name **/
 /** Returns value of the feature (int value) **/
 int getFeature(vector<int> data) {
-  Serial.print(data[0]);
-  Serial.print('|');
+  Serial1.print(data[0]);
+  Serial1.print('\n');
 
   IS_SERIAL_BLOCKED = true;
 
   delay(50);
 
-  Serial.readStringUntil('|');
-  Serial.read();
+  Serial1.readStringUntil('\n');
+  Serial1.read();
 
   IS_SERIAL_BLOCKED = false;
 }
@@ -126,12 +124,14 @@ int getFeature(vector<int> data) {
 /** [5] int room, int value **/
 void lightning(vector<int> data) {
   if (data[1] <= 0 && ROOMS_LIGHTNING_ENABLED[data[0]]) {
+    Serial.println("data[1] <= 0 && ROOMS_LIGHTNING_ENABLED[data[0]]");
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][0], 0);
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][1], 0);
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][2], 0);
 
     ROOMS_LIGHTNING_ENABLED[data[0]] = false;
   } else if (data[1] >= 1 && !ROOMS_LIGHTNING_ENABLED[data[0]]) {
+    Serial.println("data[1] >= 1 && !ROOMS_LIGHTNING_ENABLED[data[0]]");
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][0], ROOMS_LIGHTNING_COLORS[data[0]][0]);
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][1], ROOMS_LIGHTNING_COLORS[data[0]][1]);
     analogWrite(ROOMS_LIGHTNING_PINS[data[0]][2], ROOMS_LIGHTNING_COLORS[data[0]][2]);
@@ -255,30 +255,8 @@ void handleSerial() {
     return;
   }
 
-  if (Serial.available() > 0) {
-    vector<int> data = split(Serial.readStringUntil('|').c_str(), ' ');
-
-    if (Serial.available() > 0) {
-      Serial.read();
-    }
-
-    vector<int> response = handleArguments(data);
-
-    if (response.size() > 0) {
-      for (vector<int>::iterator it = response.begin(); it != response.end(); ++it) {
-        Serial.print(*it);
-
-        if (it != response.end() - 1) {
-          Serial.print(' ');
-        } else {
-          Serial.print('|');
-        }
-      }
-    }
-  }
-
   if (Serial1.available() > 0) {
-    vector<int> data = split(Serial1.readStringUntil('|').c_str(), ' ');
+    vector<int> data = split(Serial1.readStringUntil('\n').c_str(), ' ');
 
     if (Serial1.available() > 0) {
       Serial1.read();
@@ -293,7 +271,7 @@ void handleSerial() {
         if (it != response.end() - 1) {
           Serial1.print(' ');
         } else {
-          Serial1.print('|');
+          Serial1.print('\n');
         }
       }
     }
@@ -309,55 +287,19 @@ void handleModes() {
 
 /**===================== BODY =====================**/
 void setup() {
-  ROOMS_LIGHTNING_PINS[0][0] = 13;
-  ROOMS_LIGHTNING_PINS[0][1] = 12;
-  ROOMS_LIGHTNING_PINS[0][2] = 11;
-
-  ROOMS_LIGHTNING_PINS[1][0] = 10;
-  ROOMS_LIGHTNING_PINS[1][1] = 10;
-  ROOMS_LIGHTNING_PINS[1][2] = 10;
-
-  ROOMS_LIGHTNING_PINS[2][0] = 9;
-  ROOMS_LIGHTNING_PINS[2][1] = 9;
-  ROOMS_LIGHTNING_PINS[2][2] = 9;
-
-  ROOMS_LIGHTNING_PINS[3][0] = 8;
-  ROOMS_LIGHTNING_PINS[3][1] = 8;
-  ROOMS_LIGHTNING_PINS[3][2] = 8;
-
-  ROOMS_LIGHTNING_PINS[4][0] = 7;
-  ROOMS_LIGHTNING_PINS[4][1] = 7;
-  ROOMS_LIGHTNING_PINS[4][2] = 7;
-
-  ROOMS_LIGHTNING_PINS[5][0] = 6;
-  ROOMS_LIGHTNING_PINS[5][1] = 6;
-  ROOMS_LIGHTNING_PINS[5][2] = 6;
-
-  ROOMS_LIGHTNING_PINS[6][0] = 6;
-  ROOMS_LIGHTNING_PINS[6][1] = 6;
-  ROOMS_LIGHTNING_PINS[6][2] = 6;
-
-  ROOMS_LIGHTNING_PINS[6][0] = 5;
-  ROOMS_LIGHTNING_PINS[6][1] = 5;
-  ROOMS_LIGHTNING_PINS[6][2] = 5;
-
-  ROOMS_LIGHTNING_PINS[7][0] = 4;
-  ROOMS_LIGHTNING_PINS[7][1] = 4;
-  ROOMS_LIGHTNING_PINS[7][2] = 4;
+  ROOMS_LIGHTNING_PINS = {{2, 3, 4}, {5, 5, 5}, {6, 6, 6}, {7, 7, 7}, {8, 8, 8}, {9, 9, 9}, {10, 10, 10}, {11, 11, 11}, {12, 12, 12}, {13, 13, 13}};
 
   for (vector<vector<int>>::iterator it = ROOMS_LIGHTNING_PINS.begin(); it != ROOMS_LIGHTNING_PINS.end(); ++it) {
     for (vector<int>::iterator it1 = it->begin(); it1 != it->end(); ++it1) {
       pinMode(*it1, OUTPUT);
+      analogWrite(*it1, 0);
     }
   }
-
-  pinMode(ROOMS_RED_PIN, OUTPUT);
-  digitalWrite(ROOMS_BRIGHTNESS_PIN, HIGH);
 
   Serial.begin(115200);
   Serial.setTimeout(100);
 
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   Serial1.setTimeout(100);
 
   serialThread.onRun(handleSerial);

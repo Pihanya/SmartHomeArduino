@@ -60,15 +60,34 @@ void handleNotFound() {
 
 void setup(void) {
   Serial.begin(115200);
-
+  
+  // config static IP
+  IPAddress ip(192, 168, 1, 31); // where xx is the desired IP Address
+  IPAddress gateway(192, 168, 1, 1); // set gateway to match your network
+  //  Serial.print(F("Setting static ip to : "));
+  //  Serial.println(ip);
+  IPAddress subnet(255, 255, 255, 0); // set subnet mask to match your network
+  WiFi.config(ip, gateway, subnet);
+  
+//  Serial.println("");
+  
   WiFi.begin(ssid, password);
-
+  
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
+//    Serial.print(".");
   }
 
-  MDNS.begin("esp8266");
+//  Serial.println("");
+//  Serial.print("Connected to ");
+//  Serial.println(ssid);
+//  Serial.print("IP address: ");
+//  Serial.println(WiFi.localIP());
+
+  if (MDNS.begin("esp8266")) {
+//    Serial.println("MDNS responder started");
+  }
 
   server.on("/", handleRoot);
 
@@ -178,7 +197,7 @@ void setup(void) {
   server.onNotFound(handleNotFound);
 
   server.begin();
-  Serial.println("HTTP server started");
+//  Serial.println("HTTP server started");
 }
 
 void loop(void) {
